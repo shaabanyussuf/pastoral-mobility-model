@@ -8,6 +8,8 @@
 %% 1. VALUE DOMAINS
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+landscape_type(wayam; omar; malbe; badha; chaffa).
+
 season_value(wet; dry; drought).
 
 herd_kind(warra; fora).
@@ -44,14 +46,20 @@ decision_value(move; wait; do_not_move; negotiate).
 % connects(r1, z1, z2).
 % current(z1).
 % destination(z2).
-% seasonal_reserve(z2).
+% % seasonal_reserve(z2, drought).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% 3. TYPE CHECKS
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+:- landscape(Z,L), not zone(Z).
+:- landscape(Z,L), not landscape_type(L).
+
 :- herd_type(H,T), not herd(H).
 :- herd_type(H,T), not herd_kind(T).
+
+:- seasonal_reserve(Z,S), not zone(Z).
+:- seasonal_reserve(Z,S), not season_value(S).
 
 :- forage(Z,F), not zone(Z).
 :- forage(Z,F), not forage_value(F).
@@ -76,6 +84,9 @@ decision_value(move; wait; do_not_move; negotiate).
 
 :- access(Z,A), not zone(Z).
 :- access(Z,A), not access_value(A).
+
+:- recent_rain(Z), not zone(Z).
+:- heavy_rain(Z), not zone(Z).
 
 :- current(Z), not zone(Z).
 :- destination(Z), not zone(Z).
@@ -148,6 +159,48 @@ fora(H)  :- herd_type(H, fora).
 
 drought_ctx :- season(drought).
 
+effective_rain(Zd) :-
+    season(wet),
+    recent_rain(Zd).
+
+effective_rain(Zd) :-
+    season(dry),
+    heavy_rain(Zd).
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% 6A. LANDSCAPE-SEASON SUITABILITY
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+seasonally_suitable(Z) :-
+    landscape(Z, wayam),
+    season(wet).
+
+seasonally_suitable(Z) :-
+    landscape(Z, omar),
+    season(wet).
+
+seasonally_suitable(Z) :-
+    landscape(Z, malbe),
+    season(dry).
+
+seasonally_suitable(Z) :-
+    landscape(Z, badha),
+    drought_ctx.
+
+seasonally_suitable(Z) :-
+    landscape(Z, chaffa),
+    drought_ctx.
+
+has_landscape(Z) :-
+    landscape(Z,_).
+
+% If no landscape fact is provided, do not force exclusion
+seasonally_suitable(Z) :-
+    zone(Z),
+    not has_landscape(Z).
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% 7. ROUTE / CONNECTIVITY LAYER
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -162,27 +215,6 @@ path(Z1,Z3) :- path(Z1,Z2), connected(Z2,Z3), Z1 != Z3.
 %% 8. OUTPUT CONTROL
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-#show zone/1.
-#show herd/1.
-#show herd_type/2.
-#show season/1.
-#show current/1.
-#show destination/1.
-
-#show forage/2.
-#show water/2.
-#show finna/2.
-#show safety/2.
-#show distance_to_grazing_zone/2.
-#show distance_to_water/2.
-#show reachable/2.
-#show access/2.
-#show seasonal_reserve/1.
-
-#show route/1.
-#show connects/3.
-#show connected/2.
-#show path/2.
 
 #show decision/3.
 #show move/2.
