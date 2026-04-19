@@ -1,40 +1,49 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% INSTANCE TEST 2
+%% INSTANCE TEST 2 (short names)
 %% Destination has good forage but no water
 %% Expected outcome: do_not_move
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-zone(z_current).
-zone(z_no_water).
+% Zones
+zone(c).    % current zone
+zone(nw).   % no-water zone
+
+% Optional human-readable labels (ignored by rules)
+label(c,  "Current zone").
+label(nw, "No-water zone").
 
 herd(h1).
 herd_type(h1, fora).
 
 season(wet).
 
-current(z_current).
-destination(z_no_water).
+current(c).
+destination(nw).
+
+% Landscape (both usable in wet season)
+landscape(c,  wayam).
+landscape(nw, wayam).
 
 % Current zone
-forage(z_current, medium).
-water(z_current, available).
-finna(z_current, available).
-safety(z_current, safe).
-distance_to_grazing_zone(z_current, near).
-distance_to_water(z_current, near).
-reachable(z_current, reachable).
-access(z_current, accessible).
+forage(c,  medium).
+water(c,   available).
+finna(c,   available).
+safety(c,  safe).
+distance_to_grazing_zone(c,  near).
+distance_to_water(c,        near).
+reachable(c,                reachable).
+access(c,                   accessible).
 
 % Destination zone: good pasture, but water absent
-forage(z_no_water, high).
-water(z_no_water, unavailable).
-finna(z_no_water, available).
-safety(z_no_water, safe).
-distance_to_grazing_zone(z_no_water, near).
-distance_to_water(z_no_water, far).
-reachable(z_no_water, reachable).
-access(z_no_water, accessible).
+forage(nw, high).
+water(nw,  unavailable).
+finna(nw,  available).
+safety(nw, safe).
+distance_to_grazing_zone(nw, near).
+distance_to_water(nw,       far).
+reachable(nw,               reachable).
+access(nw,                  accessible).
 
 % Route
 route(r1).
-connects(r1, z_current, z_no_water).
+connects(r1, c, nw).
