@@ -22,10 +22,11 @@ water_ok(Zd) :-
     destination(Zd),
     has_water(Zd).
 
-% Normal (non-drought) suitability:
-% Note: safety is NOT checked here; handled via blocked_by_safety.
+% Normal (non-drought) suitability.
+% Safety is handled separately through blocked_by_safety/1.
 suitable_normal(Zd) :-
     destination(Zd),
+    seasonally_suitable(Zd),
     water_ok(Zd),
     good_forage(Zd),
     supports_finna(Zd),
@@ -35,6 +36,7 @@ suitable_normal(Zd) :-
 
 suitable_normal(Zd) :-
     destination(Zd),
+    seasonally_suitable(Zd),
     water_ok(Zd),
     moderate_forage(Zd),
     supports_finna(Zd),
@@ -42,10 +44,11 @@ suitable_normal(Zd) :-
     institutionally_open(Zd),
     not drought_ctx.
 
-% Drought relaxation:
+% Drought relaxation.
 suitable_drought(Zd) :-
     destination(Zd),
     drought_ctx,
+    seasonally_suitable(Zd),
     water_ok(Zd),
     poor_forage(Zd),
     supports_finna(Zd),
@@ -54,6 +57,7 @@ suitable_drought(Zd) :-
 suitable_drought(Zd) :-
     destination(Zd),
     drought_ctx,
+    seasonally_suitable(Zd),
     water_ok(Zd),
     moderate_forage(Zd),
     supports_finna(Zd),
@@ -61,6 +65,19 @@ suitable_drought(Zd) :-
 
 candidate_for_movement(Zd) :- suitable_normal(Zd).
 candidate_for_movement(Zd) :- suitable_drought(Zd).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% 2A. DROUGHT RESERVE FLAG
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+drought_reserve_candidate(Zd) :-
+    destination(Zd),
+    drought_ctx,
+    seasonal_reserve(Zd, drought),
+    candidate_for_movement(Zd),
+    route_ok(Zc, Zd),
+    not blocked_by_access(Zd),
+    not blocked_by_route(Zd).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% 3. ROUTE / ORIGIN-DESTINATION FEASIBILITY
@@ -75,7 +92,7 @@ route_ok(Zc, Zd) :-
 %% 4. BLOCKING CONDITIONS
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Safety block (your chosen place for safety).
+% Safety block.
 blocked_by_safety(Zd) :-
     destination(Zd),
     unsafe_zone(Zd),
@@ -95,7 +112,8 @@ blocked_by_route(Zd) :-
 % Seasonal reserve block (closed in normal times).
 blocked_by_reserve(Zd) :-
     destination(Zd),
-    seasonal_reserve(Zd),
+    seasonal_reserve(Zd, S),
+    season(S),
     not drought_ctx.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -110,6 +128,7 @@ negotiate(Zc, Zd) :-
     water_ok(Zd),
     supports_finna(Zd),
     physically_reachable(Zd),
+    route_ok(Zc, Zd),
     not blocked_by_safety(Zd),
     not blocked_by_route(Zd).
 
@@ -129,27 +148,17 @@ move(Zc, Zd) :-
     not blocked_by_reserve(Zd),
     not do_not_move(Zc, Zd).
 
-% Specific WAIT cases:
-% a) wet season, low forage but water present -> wait for regeneration.
+% WAIT: low forage, but rain suggests likely regeneration.
 wait(Zc, Zd) :-
     current(Zc),
     destination(Zd),
     water_ok(Zd),
     poor_forage(Zd),
-    season(wet).
-
-% b) otherwise suitable but we are conservative (fallback wait).
-wait(Zc, Zd) :-
-    current(Zc),
-    destination(Zd),
-    water_ok(Zd),
-    moderate_forage(Zd),
-    supports_finna(Zd),
-    not move(Zc, Zd),
+    effective_rain(Zd),
     not do_not_move(Zc, Zd),
     not negotiate(Zc, Zd).
 
-% DO NOT MOVE conditions:
+% DO NOT MOVE conditions.
 do_not_move(Zc, Zd) :-
     current(Zc),
     destination(Zd),
@@ -194,11 +203,34 @@ wait(Zc, Zd) :-
     not negotiate(Zc, Zd).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% 9. OUTPUT
+%% 9. OPTIMISATION
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Prefer high forage over moderate forage.
+:~ move(Zc, Zd), moderate_forage(Zd). [1@2, Zc, Zd]
+:~ move(Zc, Zd), good_forage(Zd).     [0@2, Zc, Zd]
+
+% Prefer near grazing and near water.
+:~ move(Zc, Zd), far_grazing(Zd).  [1@1, Zc, Zd]
+:~ move(Zc, Zd), near_grazing(Zd). [0@1, Zc, Zd]
+
+:~ move(Zc, Zd), far_water(Zd).    [1@1, Zc, Zd]
+:~ move(Zc, Zd), near_water(Zd).   [0@1, Zc, Zd]
+
+% In drought, prefer drought reserves over non-reserve destinations.
+:~ move(Zc, Zd), drought_ctx, not seasonal_reserve(Zd, drought). [2@3, Zc, Zd]
+
+% In drought, prefer safe destinations over unsafe ones.
+:~ move(Zc, Zd), drought_ctx, unsafe_zone(Zd). [1@2, Zc, Zd]
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% 10. OUTPUT
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 #show current/1.
 #show destination/1.
+#show seasonal_reserve/2.
+#show drought_reserve_candidate/1.
 #show move/2.
 #show wait/2.
 #show do_not_move/2.
