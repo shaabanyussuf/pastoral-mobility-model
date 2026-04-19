@@ -1,31 +1,49 @@
-zone(z_current).
-zone(z_good_near).
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% INSTANCE TEST 1 (short names)
+%% Wet season, nearby good zone with water
+%% Expected outcome: move
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Zones
+zone(c).    % current zone
+zone(g1).   % good nearby zone
+
+% Optional labels for interpretation
+label(c,  "Current zone").
+label(g1, "Good nearby wet-season zone").
 
 herd(h1).
 herd_type(h1, fora).
 
 season(wet).
 
-current(z_current).
-destination(z_good_near).
+current(c).
+destination(g1).
 
-forage(z_current, medium).
-water(z_current, available).
-finna(z_current, available).
-safety(z_current, safe).
-distance_to_grazing_zone(z_current, near).
-distance_to_water(z_current, near).
-reachable(z_current, reachable).
-access(z_current, accessible).
+% Landscape (wet-season usable)
+landscape(c,  wayam).
+landscape(g1, wayam).
 
-forage(z_good_near, high).
-water(z_good_near, available).
-finna(z_good_near, available).
-safety(z_good_near, safe).
-distance_to_grazing_zone(z_good_near, near).
-distance_to_water(z_good_near, near).
-reachable(z_good_near, reachable).
-access(z_good_near, accessible).
+% Current zone
+forage(c,  medium).
+water(c,   available).
+finna(c,   available).
+safety(c,  safe).
+distance_to_grazing_zone(c,  near).
+distance_to_water(c,        near).
+reachable(c,                reachable).
+access(c,                   accessible).
 
-route(r1).
-connects(r1, z_current, z_good_near).
+% Destination: high forage, water, safe, near
+forage(g1, high).
+water(g1,  available).
+finna(g1,  available).
+safety(g1, safe).
+distance_to_grazing_zone(g1, near).
+distance_to_water(g1,       near).
+reachable(g1,               reachable).
+access(g1,                  accessible).
+
+% Route
+route(r1_route).
+connects(r1_route, c, g1).
