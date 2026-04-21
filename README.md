@@ -1,0 +1,1 @@
+This repository contains files for a model of pastoral mobility decision making implemented in the language of (accepted by) the ASP parser-grounder Gringo. Each ``.lp'' file is a logic program corresponding to some part of the model. Certain files can be solved together see, simulating mobility decision scenarios, below for details. 
