@@ -77,7 +77,7 @@ candidate_for_movement(D,Zd) :- suitable_drought(D,Zd).
 route_ok(D,Zc,Zd) :-
     current(D,Zc),
     destination(D,Zd),
-    path(D,Zc,Zd).
+    physically_reachable(D,Zd).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% 4. BLOCKING CONDITIONS
@@ -130,7 +130,8 @@ negotiate(D,Zc,Zd) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % MOVE: suitable + reachable + not blocked
-move(D,Zc,Zd) :-
+% Eligible movement options
+movable_option(D,Zc,Zd) :-
     current(D,Zc),
     destination(D,Zd),
     candidate_for_movement(D,Zd),
@@ -140,6 +141,15 @@ move(D,Zc,Zd) :-
     not blocked_by_route(D,Zd),
     not blocked_by_reserve(D,Zd),
     not do_not_move(D,Zc,Zd).
+
+% Select exactly one move if at least one movable option exists
+1 { selected_move(D,Zc,Zd) : movable_option(D,Zc,Zd) } 1 :-
+    current(D,Zc),
+    1 { movable_option(D,Zc,Zd) : destination(D,Zd) }.
+
+% Final move action
+move(D,Zc,Zd) :-
+    selected_move(D,Zc,Zd).
 
 % WAIT: poor forage but expected regeneration after rain
 wait(D,Zc,Zd) :-
@@ -184,19 +194,12 @@ do_not_move(D,Zc,Zd) :-
 :- wait(D,Zc,Zd), negotiate(D,Zc,Zd).
 :- do_not_move(D,Zc,Zd), negotiate(D,Zc,Zd).
 
+
+
 % Extra safety at decision-view level
 :- decision(D,Zc,Zd,A1), decision(D,Zc,Zd,A2), A1 != A2.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% 8. DEFAULT WAIT UNDER UNCERTAINTY
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-wait(D,Zc,Zd) :-
-    current(D,Zc),
-    destination(D,Zd),
-    not move(D,Zc,Zd),
-    not do_not_move(D,Zc,Zd),
-    not negotiate(D,Zc,Zd).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% 9. OPTIMISATION
@@ -223,7 +226,7 @@ wait(D,Zc,Zd) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% 10. OUTPUT
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+#show movable_option/3.
 #show move/3.
 #show wait/3.
 #show do_not_move/3.
