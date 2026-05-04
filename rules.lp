@@ -54,7 +54,6 @@ suitable_normal(D,Zd) :-
 suitable_drought(D,Zd) :-
     destination(D,Zd),
     drought_ctx,
-    seasonally_suitable(D,Zd),
     water_ok(D,Zd),
     poor_forage(D,Zd),
     supports_finna(D,Zd),
@@ -63,7 +62,6 @@ suitable_drought(D,Zd) :-
 suitable_drought(D,Zd) :-
     destination(D,Zd),
     drought_ctx,
-    seasonally_suitable(D,Zd),
     water_ok(D,Zd),
     moderate_forage(D,Zd),
     supports_finna(D,Zd),
@@ -102,8 +100,8 @@ blocked_by_route(D,Zd) :-
     destination(D,Zd),
     unreachable(D,Zd).
 
-% Seasonal reserve block:
-% reserves are not used in normal times unless drought context applies
+% Drought reserve block:
+% drought reserves are not used in normal times unless opened
 blocked_by_reserve(D,Zd) :-
     destination(D,Zd),
     drought_reserve(D,Zd),
@@ -124,7 +122,8 @@ negotiate(D,Zc,Zd) :-
     physically_reachable(D,Zd),
     route_ok(D,Zc,Zd),
     not blocked_by_safety(D,Zd),
-    not blocked_by_route(D,Zd).
+    not blocked_by_route(D,Zd),
+    not blocked_by_reserve(D,Zd).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% 6. MOVE / WAIT / DO NOT MOVE
@@ -185,7 +184,7 @@ do_not_move(D,Zc,Zd) :-
 :- wait(D,Zc,Zd), negotiate(D,Zc,Zd).
 :- do_not_move(D,Zc,Zd), negotiate(D,Zc,Zd).
 
-% Optional extra safety at decision-view level
+% Extra safety at decision-view level
 :- decision(D,Zc,Zd,A1), decision(D,Zc,Zd,A2), A1 != A2.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -215,8 +214,8 @@ wait(D,Zc,Zd) :-
 :~ move(D,Zc,Zd), far_water(D,Zd).  [1@1,D,Zc,Zd]
 :~ move(D,Zc,Zd), near_water(D,Zd). [0@1,D,Zc,Zd]
 
-% In drought, prefer reserve destinations
-:~ move(D,Zc,Zd), drought_ctx, not seasonal_reserve(D,Zd). [2@3,D,Zc,Zd]
+% In drought, prefer drought reserves
+:~ move(D,Zc,Zd), drought_ctx, not drought_reserve(D,Zd). [2@3,D,Zc,Zd]
 
 % In drought, still prefer safe destinations when possible
 :~ move(D,Zc,Zd), drought_ctx, unsafe_zone(D,Zd). [1@2,D,Zc,Zd]
