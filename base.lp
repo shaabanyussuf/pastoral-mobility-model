@@ -1,223 +1,306 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% BASE ENCODING LAYER
-%% Pastoral mobility / grazing-zone decision model
-%% Neutral ontology + typing + integrity constraints
+%% BASE ENCODING: DEDHA-SPECIFIC GROUNDED LANDSCAPE
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% 1. VALUE DOMAINS
+%% 1. CORE ENTITIES
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-landscape_type(wayam; omar; malbe; badha; chaffa).
+dedha(d1;d2).
+grazing_area(a;b;c;d;e;f;g;h;i).
 
-season_value(wet; dry; drought).
+% Area membership
+area(D,Z) :-
+    dedha(D),
+    grazing_area(Z).
 
-herd_kind(warra; fora).
-
-forage_value(high; medium; low).
-water_value(available; unavailable).
-finna_value(available; unavailable).
-safety_value(safe; unsafe).
-
-dist_grazing_value(near; far).
-dist_water_value(near; far).
-
-reachability_value(reachable; unreachable).
-access_value(accessible; inaccessible).
-
-decision_value(move; wait; do_not_move; negotiate).
+% To be given in scenario files:
+% current(D,Z).
+% destination(D,Z).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% 2. CORE ENTITIES (FACTS COME FROM INSTANCE)
+%% 2. VALUE DOMAINS
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Example expected extensional facts in instance file:
-% zone(z1). zone(z2). zone(z3).
-% herd(h1). herd(h2).
-% route(r1).
-% season(wet).
-% herd_type(h1, warra).
-% forage(z1, high). water(z1, available). finna(z1, available).
-% safety(z1, safe).
-% distance_to_grazing_zone(z1, near).
-% distance_to_water(z1, near).
-% reachable(z1, reachable).
-% access(z1, accessible).
-% connects(r1, z1, z2).
-% current(z1).
-% destination(z2).
-% % seasonal_reserve(z2, drought).
+landscape_type(baada;caafa;malbe;wayam;omar).
+forage_value(good;moderate;poor).
+water_value(available;scarce;none).
+finna_value(good;poor).
+safety_value(safe;unsafe).
+access_value(open;restricted).
+distance_value(near;far).
+
+season_value(wet;dry;drought).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% 3. TYPE CHECKS
+%% 3. LANDSCAPE ASSIGNMENT
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-:- landscape(Z,L), not zone(Z).
-:- landscape(Z,L), not landscape_type(L).
+% Dedha 1
+landscape(d1,a,baada). landscape(d1,b,baada). landscape(d1,c,baada).
+landscape(d1,d,malbe). landscape(d1,e,malbe). landscape(d1,f,malbe).
+landscape(d1,g,wayam). landscape(d1,h,wayam). landscape(d1,i,wayam).
 
-:- herd_type(H,T), not herd(H).
-:- herd_type(H,T), not herd_kind(T).
-
-:- seasonal_reserve(Z,S), not zone(Z).
-:- seasonal_reserve(Z,S), not season_value(S).
-
-:- forage(Z,F), not zone(Z).
-:- forage(Z,F), not forage_value(F).
-
-:- water(Z,W), not zone(Z).
-:- water(Z,W), not water_value(W).
-
-:- finna(Z,V), not zone(Z).
-:- finna(Z,V), not finna_value(V).
-
-:- safety(Z,Sf), not zone(Z).
-:- safety(Z,Sf), not safety_value(Sf).
-
-:- distance_to_grazing_zone(Z,D), not zone(Z).
-:- distance_to_grazing_zone(Z,D), not dist_grazing_value(D).
-
-:- distance_to_water(Z,WD), not zone(Z).
-:- distance_to_water(Z,WD), not dist_water_value(WD).
-
-:- reachable(Z,R), not zone(Z).
-:- reachable(Z,R), not reachability_value(R).
-
-:- access(Z,A), not zone(Z).
-:- access(Z,A), not access_value(A).
-
-:- recent_rain(Z), not zone(Z).
-:- heavy_rain(Z), not zone(Z).
-
-:- current(Z), not zone(Z).
-:- destination(Z), not zone(Z).
-
-:- decision(Zc,Zd,D), not zone(Zc).
-:- decision(Zc,Zd,D), not zone(Zd).
-:- decision(Zc,Zd,D), not decision_value(D).
-
-:- route(R), connects(R,Z1,Z2), not zone(Z1).
-:- route(R), connects(R,Z1,Z2), not zone(Z2).
-:- connects(R,Z1,Z2), not route(R).
+% Dedha 2
+landscape(d2,a,caafa). landscape(d2,b,caafa). landscape(d2,c,caafa).
+landscape(d2,d,malbe). landscape(d2,e,malbe). landscape(d2,f,malbe).
+landscape(d2,g,omar).  landscape(d2,h,omar).  landscape(d2,i,omar).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% 4. FUNCTIONAL UNIQUENESS
+%% 4. LANDSCAPE SEASONAL SUITABILITY
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-:- herd_type(H,T1), herd_type(H,T2), T1 != T2.
+suitable_in_season(baada, drought).
+suitable_in_season(caafa, drought).
 
-:- season(S1), season(S2), S1 != S2.
+suitable_in_season(malbe, dry).
 
-:- forage(Z,F1), forage(Z,F2), F1 != F2.
-:- water(Z,W1), water(Z,W2), W1 != W2.
-:- finna(Z,V1), finna(Z,V2), V1 != V2.
-:- safety(Z,S1), safety(Z,S2), S1 != S2.
-:- distance_to_grazing_zone(Z,D1), distance_to_grazing_zone(Z,D2), D1 != D2.
-:- distance_to_water(Z,W1), distance_to_water(Z,W2), W1 != W2.
-:- reachable(Z,R1), reachable(Z,R2), R1 != R2.
-:- access(Z,A1), access(Z,A2), A1 != A2.
+suitable_in_season(wayam, wet).
+suitable_in_season(omar, wet).
 
-:- current(Z1), current(Z2), Z1 != Z2.
-:- destination(Z1), destination(Z2), Z1 != Z2.
+seasonally_suitable(D,Z) :-
+    landscape(D,Z,L),
+    season(S),
+    suitable_in_season(L,S).
 
-% :- decision(Zc,Zd,D1), decision(Zc,Zd,D2), D1 != D2.
+drought_landscape(D,Z) :-
+    landscape(D,Z,L),
+    suitable_in_season(L,drought).
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% 5. DERIVED BOOLEAN VIEWS
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+dry_landscape(D,Z) :-
+    landscape(D,Z,L),
+    suitable_in_season(L,dry).
 
-good_forage(Z)      :- forage(Z, high).
-moderate_forage(Z)  :- forage(Z, medium).
-poor_forage(Z)      :- forage(Z, low).
-
-has_water(Z)        :- water(Z, available).
-no_water(Z)         :- water(Z, unavailable).
-
-supports_finna(Z)   :- finna(Z, available).
-poor_finna(Z)       :- finna(Z, unavailable).
-
-safe_zone(Z)        :- safety(Z, safe).
-unsafe_zone(Z)      :- safety(Z, unsafe).
-
-near_grazing(Z)     :- distance_to_grazing_zone(Z, near).
-far_grazing(Z)      :- distance_to_grazing_zone(Z, far).
-
-near_water(Z)       :- distance_to_water(Z, near).
-far_water(Z)        :- distance_to_water(Z, far).
-
-physically_reachable(Z) :- reachable(Z, reachable).
-blocked_zone(Z)         :- reachable(Z, unreachable).
-
-institutionally_open(Z) :- access(Z, accessible).
-restricted_zone(Z)      :- access(Z, inaccessible).
-
-warra(H) :- herd_type(H, warra).
-fora(H)  :- herd_type(H, fora).
+wet_landscape(D,Z) :-
+    landscape(D,Z,L),
+    suitable_in_season(L,wet).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% 6. CONTEXT LAYER
+%% 5. TYPE INTEGRITY CONSTRAINTS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- current(D,Z), not area(D,Z).
+:- destination(D,Z), not area(D,Z).
+
+:- landscape(D,Z,L), not area(D,Z).
+:- landscape(D,Z,L), not landscape_type(L).
+
+:- forage(D,Z,F), not area(D,Z).
+:- forage(D,Z,F), not forage_value(F).
+
+:- water(D,Z,W), not area(D,Z).
+:- water(D,Z,W), not water_value(W).
+
+:- finna(D,Z,V), not area(D,Z).
+:- finna(D,Z,V), not finna_value(V).
+
+:- safety(D,Z,S), not area(D,Z).
+:- safety(D,Z,S), not safety_value(S).
+
+:- access(D,Z,A), not area(D,Z).
+:- access(D,Z,A), not access_value(A).
+
+:- distance_to_water(D,Z,Dist), not area(D,Z).
+:- distance_to_water(D,Z,Dist), not distance_value(Dist).
+
+:- seasonal_reserve(D,Z), not area(D,Z).
+:- protected(D,Z), not area(D,Z).
+
+:- recent_rain(D,Z), not area(D,Z).
+:- heavy_rain(D,Z), not area(D,Z).
+
+:- season(S), not season_value(S).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% 6. FUNCTIONAL UNIQUENESS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- forage(D,Z,F1), forage(D,Z,F2), F1 != F2.
+:- water(D,Z,W1), water(D,Z,W2), W1 != W2.
+:- finna(D,Z,V1), finna(D,Z,V2), V1 != V2.
+:- safety(D,Z,S1), safety(D,Z,S2), S1 != S2.
+:- access(D,Z,A1), access(D,Z,A2), A1 != A2.
+:- distance_to_water(D,Z,D1), distance_to_water(D,Z,D2), D1 != D2.
+:- landscape(D,Z,L1), landscape(D,Z,L2), L1 != L2.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% 7. DERIVED BOOLEAN VIEWS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Water
+has_water(D,Z) :- water(D,Z, available).
+scarce_water(D,Z) :- water(D,Z, scarce).
+no_water(D,Z) :- water(D,Z, none).
+
+% Forage
+good_forage(D,Z) :- forage(D,Z, good).
+moderate_forage(D,Z) :- forage(D,Z, moderate).
+poor_forage(D,Z) :- forage(D,Z, poor).
+
+% Finna
+supports_finna(D,Z) :- finna(D,Z, good).
+poor_finna(D,Z) :- finna(D,Z, poor).
+
+% Safety
+safe_zone(D,Z) :- safety(D,Z, safe).
+unsafe_zone(D,Z) :- safety(D,Z, unsafe).
+
+% Access
+institutionally_open(D,Z) :- access(D,Z, open).
+restricted_zone(D,Z) :- access(D,Z, restricted).
+
+% Distance to water
+near_water(D,Z) :- distance_to_water(D,Z, near).
+far_water(D,Z) :- distance_to_water(D,Z, far).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% 8. CONTEXT LAYER
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 drought_ctx :- season(drought).
 
-effective_rain(Zd) :-
+effective_rain(D,Z) :-
     season(wet),
-    recent_rain(Zd).
+    recent_rain(D,Z).
 
-effective_rain(Zd) :-
+effective_rain(D,Z) :-
     season(dry),
-    heavy_rain(Zd).
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% 6A. LANDSCAPE-SEASON SUITABILITY
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-seasonally_suitable(Z) :-
-    landscape(Z, wayam),
-    season(wet).
-
-seasonally_suitable(Z) :-
-    landscape(Z, omar),
-    season(wet).
-
-seasonally_suitable(Z) :-
-    landscape(Z, malbe),
-    season(dry).
-
-seasonally_suitable(Z) :-
-    landscape(Z, badha),
-    drought_ctx.
-
-seasonally_suitable(Z) :-
-    landscape(Z, chaffa),
-    drought_ctx.
-
-has_landscape(Z) :-
-    landscape(Z,_).
-
-% If no landscape fact is provided, do not force exclusion
-seasonally_suitable(Z) :-
-    zone(Z),
-    not has_landscape(Z).
-
+    heavy_rain(D,Z).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% 7. ROUTE / CONNECTIVITY LAYER
+%% 9. ROUTE NETWORK WITHIN EACH DEDHA
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-connected(Z1,Z2) :- connects(R,Z1,Z2).
-connected(Z2,Z1) :- connects(R,Z1,Z2).
+route(D,a,b) :- dedha(D).
+route(D,b,c) :- dedha(D).
 
-path(Z1,Z2) :- connected(Z1,Z2).
-path(Z1,Z3) :- path(Z1,Z2), connected(Z2,Z3), Z1 != Z3.
+route(D,f,e) :- dedha(D).
+route(D,e,d) :- dedha(D).
+
+route(D,g,h) :- dedha(D).
+route(D,h,i) :- dedha(D).
+
+route(D,a,f) :- dedha(D).
+route(D,f,g) :- dedha(D).
+
+route(D,b,e) :- dedha(D).
+route(D,e,h) :- dedha(D).
+
+route(D,c,d) :- dedha(D).
+route(D,d,i) :- dedha(D).
+
+% Symmetry
+route(D,Y,X) :- route(D,X,Y).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% 8. OUTPUT CONTROL
+%% 10. BLOCKED ROUTE HANDLING
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+% blocked_route(D,X,Y).   % scenario-specific facts
 
-#show decision/3.
-#show move/2.
-#show wait/2.
-#show do_not_move/2.
-#show negotiate/2.
+:- blocked_route(D,X,Y), not route(D,X,Y).
+
+usable_route(D,X,Y) :-
+    route(D,X,Y),
+    not blocked_route(D,X,Y).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% 11. PATH / REACHABILITY
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+path(D,X,Y) :-
+    usable_route(D,X,Y).
+
+path(D,X,Z) :-
+    path(D,X,Y),
+    usable_route(D,Y,Z),
+    X != Z.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% 12. QUALITATIVE ROUTE-STEP DISTANCE
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+step_distance(D,X,Y,1) :-
+    usable_route(D,X,Y).
+
+step_distance(D,X,Z,N+1) :-
+    step_distance(D,X,Y,N),
+    usable_route(D,Y,Z),
+    X != Z,
+    N < 10.
+
+near_route(D,X,Y) :-
+    step_distance(D,X,Y,1).
+
+near_route(D,X,Y) :-
+    step_distance(D,X,Y,2).
+
+far_route(D,X,Y) :-
+    path(D,X,Y),
+    not near_route(D,X,Y).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% 13. PHYSICAL REACHABILITY STATUS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+physically_reachable(D,Zd) :-
+    current(D,Zc),
+    destination(D,Zd),
+    path(D,Zc,Zd).
+
+unreachable(D,Zd) :-
+    current(D,Zc),
+    destination(D,Zd),
+    not path(D,Zc,Zd).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% 14. OPTIONAL LANDSCAPE VIEWS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+is_baada(D,Z) :- landscape(D,Z,baada).
+is_caafa(D,Z) :- landscape(D,Z,caafa).
+is_malbe(D,Z) :- landscape(D,Z,malbe).
+is_wayam(D,Z) :- landscape(D,Z,wayam).
+is_omar(D,Z)  :- landscape(D,Z,omar).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% 15. SANITY CONSTRAINTS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Unique current location
+:- current(D1,Z1), current(D2,Z2), (D1,Z1) != (D2,Z2).
+
+% Current and destination cannot be the same
+:- current(D,Z), destination(D,Z).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% 16. OUTPUT CONTROL
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+#show current/2.
+#show destination/2.
+
+#show landscape/3.
+#show seasonally_suitable/2.
+
+#show route/3.
+#show blocked_route/3.
+#show usable_route/3.
+#show path/3.
+
+#show physically_reachable/2.
+#show unreachable/2.
+
+#show near_route/3.
+#show far_route/3.
+
+#show has_water/2.
+#show good_forage/2.
+#show moderate_forage/2.
+#show poor_forage/2.
+#show supports_finna/2.
+#show poor_finna/2.
+#show unsafe_zone/2.
+#show restricted_zone/2.
+#show institutionally_open/2.
+#show effective_rain/2.
