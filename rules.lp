@@ -106,8 +106,9 @@ blocked_by_route(D,Zd) :-
 % reserves are not used in normal times unless drought context applies
 blocked_by_reserve(D,Zd) :-
     destination(D,Zd),
-    seasonal_reserve(D,Zd),
-    not drought_ctx.
+    drought_reserve(D,Zd),
+    not drought_ctx,
+    not reserve_open(D,Zd).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% 5. NEGOTIATION RULES
