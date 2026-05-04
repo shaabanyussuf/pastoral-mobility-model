@@ -1,238 +1,236 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% RULE ENCODING LAYER
-%% Core decision logic only
+%% DEDHA-SPECIFIC DECISION LOGIC
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% 1. MOVEMENT ABSTRACTION
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Actions are primary; decision/3 is a view.
-decision(Zc, Zd, move)        :- move(Zc, Zd).
-decision(Zc, Zd, wait)        :- wait(Zc, Zd).
-decision(Zc, Zd, do_not_move) :- do_not_move(Zc, Zd).
-decision(Zc, Zd, negotiate)   :- negotiate(Zc, Zd).
+% Actions are primary; decision/4 is a unified view.
+decision(D,Zc,Zd,move) :-
+    move(D,Zc,Zd).
+
+decision(D,Zc,Zd,wait) :-
+    wait(D,Zc,Zd).
+
+decision(D,Zc,Zd,do_not_move) :-
+    do_not_move(D,Zc,Zd).
+
+decision(D,Zc,Zd,negotiate) :-
+    negotiate(D,Zc,Zd).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% 2. SUITABILITY RULES
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Water is non-negotiable for destination suitability.
-water_ok(Zd) :-
-    destination(Zd),
-    has_water(Zd).
+% Water is non-negotiable.
+water_ok(D,Zd) :-
+    destination(D,Zd),
+    has_water(D,Zd).
 
-% Normal (non-drought) suitability.
-% Safety is handled separately through blocked_by_safety/1.
-suitable_normal(Zd) :-
-    destination(Zd),
-    seasonally_suitable(Zd),
-    water_ok(Zd),
-    good_forage(Zd),
-    supports_finna(Zd),
-    physically_reachable(Zd),
-    institutionally_open(Zd),
+% Normal suitability
+suitable_normal(D,Zd) :-
+    destination(D,Zd),
+    seasonally_suitable(D,Zd),
+    water_ok(D,Zd),
+    good_forage(D,Zd),
+    supports_finna(D,Zd),
+    physically_reachable(D,Zd),
+    institutionally_open(D,Zd),
     not drought_ctx.
 
-suitable_normal(Zd) :-
-    destination(Zd),
-    seasonally_suitable(Zd),
-    water_ok(Zd),
-    moderate_forage(Zd),
-    supports_finna(Zd),
-    physically_reachable(Zd),
-    institutionally_open(Zd),
+suitable_normal(D,Zd) :-
+    destination(D,Zd),
+    seasonally_suitable(D,Zd),
+    water_ok(D,Zd),
+    moderate_forage(D,Zd),
+    supports_finna(D,Zd),
+    physically_reachable(D,Zd),
+    institutionally_open(D,Zd),
     not drought_ctx.
 
-% Drought relaxation.
-suitable_drought(Zd) :-
-    destination(Zd),
+% Drought relaxation
+suitable_drought(D,Zd) :-
+    destination(D,Zd),
     drought_ctx,
-    seasonally_suitable(Zd),
-    water_ok(Zd),
-    poor_forage(Zd),
-    supports_finna(Zd),
-    physically_reachable(Zd).
+    seasonally_suitable(D,Zd),
+    water_ok(D,Zd),
+    poor_forage(D,Zd),
+    supports_finna(D,Zd),
+    physically_reachable(D,Zd).
 
-suitable_drought(Zd) :-
-    destination(Zd),
+suitable_drought(D,Zd) :-
+    destination(D,Zd),
     drought_ctx,
-    seasonally_suitable(Zd),
-    water_ok(Zd),
-    moderate_forage(Zd),
-    supports_finna(Zd),
-    physically_reachable(Zd).
+    seasonally_suitable(D,Zd),
+    water_ok(D,Zd),
+    moderate_forage(D,Zd),
+    supports_finna(D,Zd),
+    physically_reachable(D,Zd).
 
-candidate_for_movement(Zd) :- suitable_normal(Zd).
-candidate_for_movement(Zd) :- suitable_drought(Zd).
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% 2A. DROUGHT RESERVE FLAG
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-drought_reserve_candidate(Zd) :-
-    destination(Zd),
-    drought_ctx,
-    seasonal_reserve(Zd, drought),
-    candidate_for_movement(Zd),
-    route_ok(Zc, Zd),
-    not blocked_by_access(Zd),
-    not blocked_by_route(Zd).
+candidate_for_movement(D,Zd) :- suitable_normal(D,Zd).
+candidate_for_movement(D,Zd) :- suitable_drought(D,Zd).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% 3. ROUTE / ORIGIN-DESTINATION FEASIBILITY
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-route_ok(Zc, Zd) :-
-    current(Zc),
-    destination(Zd),
-    path(Zc, Zd).
+route_ok(D,Zc,Zd) :-
+    current(D,Zc),
+    destination(D,Zd),
+    path(D,Zc,Zd).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% 4. BLOCKING CONDITIONS
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Safety block.
-blocked_by_safety(Zd) :-
-    destination(Zd),
-    unsafe_zone(Zd),
+% Safety block
+blocked_by_safety(D,Zd) :-
+    destination(D,Zd),
+    unsafe_zone(D,Zd),
     not drought_ctx.
 
-% Institutional access block.
-blocked_by_access(Zd) :-
-    destination(Zd),
-    restricted_zone(Zd),
+% Institutional access block
+blocked_by_access(D,Zd) :-
+    destination(D,Zd),
+    restricted_zone(D,Zd),
     not drought_ctx.
 
-% Physical connectivity block.
-blocked_by_route(Zd) :-
-    destination(Zd),
-    blocked_zone(Zd).
+% Route block: destination is unreachable from current area
+blocked_by_route(D,Zd) :-
+    destination(D,Zd),
+    unreachable(D,Zd).
 
-% Seasonal reserve block (closed in normal times).
-blocked_by_reserve(Zd) :-
-    destination(Zd),
-    seasonal_reserve(Zd, S),
-    season(S),
+% Seasonal reserve block:
+% reserves are not used in normal times unless drought context applies
+blocked_by_reserve(D,Zd) :-
+    destination(D,Zd),
+    seasonal_reserve(D,Zd),
     not drought_ctx.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% 5. NEGOTIATION RULES
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Negotiation when access is restricted but otherwise usable.
-negotiate(Zc, Zd) :-
-    current(Zc),
-    destination(Zd),
-    restricted_zone(Zd),
-    water_ok(Zd),
-    supports_finna(Zd),
-    physically_reachable(Zd),
-    route_ok(Zc, Zd),
-    not blocked_by_safety(Zd),
-    not blocked_by_route(Zd).
+% Negotiation when access is restricted but area is otherwise usable
+negotiate(D,Zc,Zd) :-
+    current(D,Zc),
+    destination(D,Zd),
+    restricted_zone(D,Zd),
+    water_ok(D,Zd),
+    supports_finna(D,Zd),
+    physically_reachable(D,Zd),
+    route_ok(D,Zc,Zd),
+    not blocked_by_safety(D,Zd),
+    not blocked_by_route(D,Zd).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% 6. MOVE / WAIT / DO NOT MOVE
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% MOVE: all suitability conditions + route ok + no blocks.
-move(Zc, Zd) :-
-    current(Zc),
-    destination(Zd),
-    candidate_for_movement(Zd),
-    route_ok(Zc, Zd),
-    not blocked_by_safety(Zd),
-    not blocked_by_access(Zd),
-    not blocked_by_route(Zd),
-    not blocked_by_reserve(Zd),
-    not do_not_move(Zc, Zd).
+% MOVE: suitable + reachable + not blocked
+move(D,Zc,Zd) :-
+    current(D,Zc),
+    destination(D,Zd),
+    candidate_for_movement(D,Zd),
+    route_ok(D,Zc,Zd),
+    not blocked_by_safety(D,Zd),
+    not blocked_by_access(D,Zd),
+    not blocked_by_route(D,Zd),
+    not blocked_by_reserve(D,Zd),
+    not do_not_move(D,Zc,Zd).
 
-% WAIT: low forage, but rain suggests likely regeneration.
-wait(Zc, Zd) :-
-    current(Zc),
-    destination(Zd),
-    water_ok(Zd),
-    poor_forage(Zd),
-    effective_rain(Zd),
-    not do_not_move(Zc, Zd),
-    not negotiate(Zc, Zd).
+% WAIT: poor forage but expected regeneration after rain
+wait(D,Zc,Zd) :-
+    current(D,Zc),
+    destination(D,Zd),
+    water_ok(D,Zd),
+    poor_forage(D,Zd),
+    effective_rain(D,Zd),
+    not do_not_move(D,Zc,Zd),
+    not negotiate(D,Zc,Zd).
 
-% DO NOT MOVE conditions.
-do_not_move(Zc, Zd) :-
-    current(Zc),
-    destination(Zd),
-    no_water(Zd).
+% DO NOT MOVE conditions
+do_not_move(D,Zc,Zd) :-
+    current(D,Zc),
+    destination(D,Zd),
+    no_water(D,Zd).
 
-do_not_move(Zc, Zd) :-
-    current(Zc),
-    destination(Zd),
-    poor_finna(Zd),
+do_not_move(D,Zc,Zd) :-
+    current(D,Zc),
+    destination(D,Zd),
+    poor_finna(D,Zd),
     not drought_ctx.
 
-do_not_move(Zc, Zd) :-
-    current(Zc),
-    destination(Zd),
-    blocked_by_safety(Zd).
+do_not_move(D,Zc,Zd) :-
+    current(D,Zc),
+    destination(D,Zd),
+    blocked_by_safety(D,Zd).
 
-do_not_move(Zc, Zd) :-
-    current(Zc),
-    destination(Zd),
-    blocked_by_route(Zd).
+do_not_move(D,Zc,Zd) :-
+    current(D,Zc),
+    destination(D,Zd),
+    blocked_by_route(D,Zd).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% 7. DECISION CONSISTENCY
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-:- move(Zc, Zd), wait(Zc, Zd).
-:- move(Zc, Zd), do_not_move(Zc, Zd).
-:- move(Zc, Zd), negotiate(Zc, Zd).
-:- wait(Zc, Zd), do_not_move(Zc, Zd).
-:- wait(Zc, Zd), negotiate(Zc, Zd).
-:- do_not_move(Zc, Zd), negotiate(Zc, Zd).
+:- move(D,Zc,Zd), wait(D,Zc,Zd).
+:- move(D,Zc,Zd), do_not_move(D,Zc,Zd).
+:- move(D,Zc,Zd), negotiate(D,Zc,Zd).
+:- wait(D,Zc,Zd), do_not_move(D,Zc,Zd).
+:- wait(D,Zc,Zd), negotiate(D,Zc,Zd).
+:- do_not_move(D,Zc,Zd), negotiate(D,Zc,Zd).
+
+% Optional extra safety at decision-view level
+:- decision(D,Zc,Zd,A1), decision(D,Zc,Zd,A2), A1 != A2.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% 8. DEFAULT WAIT UNDER UNCERTAINTY
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-wait(Zc, Zd) :-
-    current(Zc),
-    destination(Zd),
-    not move(Zc, Zd),
-    not do_not_move(Zc, Zd),
-    not negotiate(Zc, Zd).
+wait(D,Zc,Zd) :-
+    current(D,Zc),
+    destination(D,Zd),
+    not move(D,Zc,Zd),
+    not do_not_move(D,Zc,Zd),
+    not negotiate(D,Zc,Zd).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% 9. OPTIMISATION
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Prefer high forage over moderate forage.
-:~ move(Zc, Zd), moderate_forage(Zd). [1@2, Zc, Zd]
-:~ move(Zc, Zd), good_forage(Zd).     [0@2, Zc, Zd]
+% Prefer good forage over moderate forage
+:~ move(D,Zc,Zd), moderate_forage(D,Zd). [1@2,D,Zc,Zd]
+:~ move(D,Zc,Zd), good_forage(D,Zd).     [0@2,D,Zc,Zd]
 
-% Prefer near grazing and near water.
-:~ move(Zc, Zd), far_grazing(Zd).  [1@1, Zc, Zd]
-:~ move(Zc, Zd), near_grazing(Zd). [0@1, Zc, Zd]
+% Prefer near destinations over far destinations (route-step distance)
+:~ move(D,Zc,Zd), far_route(D,Zc,Zd).  [1@1,D,Zc,Zd]
+:~ move(D,Zc,Zd), near_route(D,Zc,Zd). [0@1,D,Zc,Zd]
 
-:~ move(Zc, Zd), far_water(Zd).    [1@1, Zc, Zd]
-:~ move(Zc, Zd), near_water(Zd).   [0@1, Zc, Zd]
+% Prefer near water over far water
+:~ move(D,Zc,Zd), far_water(D,Zd).  [1@1,D,Zc,Zd]
+:~ move(D,Zc,Zd), near_water(D,Zd). [0@1,D,Zc,Zd]
 
-% In drought, prefer drought reserves over non-reserve destinations.
-:~ move(Zc, Zd), drought_ctx, not seasonal_reserve(Zd, drought). [2@3, Zc, Zd]
+% In drought, prefer reserve destinations
+:~ move(D,Zc,Zd), drought_ctx, not seasonal_reserve(D,Zd). [2@3,D,Zc,Zd]
 
-% In drought, prefer safe destinations over unsafe ones.
-:~ move(Zc, Zd), drought_ctx, unsafe_zone(Zd). [1@2, Zc, Zd]
+% In drought, still prefer safe destinations when possible
+:~ move(D,Zc,Zd), drought_ctx, unsafe_zone(D,Zd). [1@2,D,Zc,Zd]
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% 10. OUTPUT
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-#show current/1.
-#show destination/1.
-#show seasonal_reserve/2.
-#show drought_reserve_candidate/1.
-#show move/2.
-#show wait/2.
-#show do_not_move/2.
-#show negotiate/2.
-#show decision/3.
+#show move/3.
+#show wait/3.
+#show do_not_move/3.
+#show negotiate/3.
+#show decision/4.
+#show candidate_for_movement/2.
+#show blocked_by_route/2.
+#show blocked_by_access/2.
+#show blocked_by_safety/2.
+#show blocked_by_reserve/2.
