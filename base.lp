@@ -103,7 +103,8 @@ wet_landscape(D,Z) :-
 :- distance_to_water(D,Z,Dist), not area(D,Z).
 :- distance_to_water(D,Z,Dist), not distance_value(Dist).
 
-:- seasonal_reserve(D,Z), not area(D,Z).
+:- drought_reserve(D,Z), not area(D,Z).
+:- reserve_open(D,Z), not area(D,Z).
 :- protected(D,Z), not area(D,Z).
 
 :- recent_rain(D,Z), not area(D,Z).
