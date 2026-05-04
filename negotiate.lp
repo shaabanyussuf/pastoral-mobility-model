@@ -1,49 +1,29 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% INSTANCE TEST 3 (short names)
-%% Destination is restricted but physically reachable
-%% Expected outcome: negotiate
+%% INSTANCE TEST 2
+%% Restricted but otherwise usable destination
+%% Expected outcome: negotiate(d1,a,g)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-% Zones
-zone(c).    % current zone
-zone(r1).   % restricted zone
-
-% Optional labels for interpretation
-label(c,  "Current zone").
-label(r1, "Restricted access zone").
-
-herd(h1).
-herd_type(h1, fora).
 
 season(wet).
 
-current(c).
-destination(r1).
+% Current location
+current(d1,a).
 
-% Landscape (wet-season usable)
-landscape(c,  wayam).
-landscape(r1, wayam).
+% Destination under consideration
+destination(d1,g).
 
-% Current zone
-forage(c,  medium).
-water(c,   available).
-finna(c,   available).
-safety(c,  safe).
-distance_to_grazing_zone(c,  near).
-distance_to_water(c,        near).
-reachable(c,                reachable).
-access(c,                   accessible).
+% Current area conditions (optional unless needed later)
+forage(d1,a,moderate).
+water(d1,a,available).
+finna(d1,a,good).
+safety(d1,a,safe).
+access(d1,a,open).
+distance_to_water(d1,a,near).
 
-% Destination zone: good but institutionally restricted
-forage(r1, high).
-water(r1,  available).
-finna(r1,  available).
-safety(r1, safe).
-distance_to_grazing_zone(r1, near).
-distance_to_water(r1,       near).
-reachable(r1,               reachable).
-access(r1,                  inaccessible).
-
-% Route
-route(r1_route).
-connects(r1_route, c, r1).
+% Destination conditions
+forage(d1,g,good).
+water(d1,g,available).
+finna(d1,g,good).
+safety(d1,g,safe).
+access(d1,g,restricted).
+distance_to_water(d1,g,near).
