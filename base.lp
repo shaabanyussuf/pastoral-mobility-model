@@ -18,6 +18,12 @@ area(D,Z) :-
 % current(D,Z).
 % destination(D,Z).
 
+% Optional scenario facts:
+% drought_reserve(D,Z).   % area intentionally set aside for drought/emergency use
+% reserve_open(D,Z).      % institutional override to open a drought reserve early
+% protected(D,Z).
+% blocked_route(D,X,Y).
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% 2. VALUE DOMAINS
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -197,8 +203,6 @@ route(D,Y,X) :- route(D,X,Y).
 %% 10. BLOCKED ROUTE HANDLING
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% blocked_route(D,X,Y).   % scenario-specific facts
-
 :- blocked_route(D,X,Y), not route(D,X,Y).
 
 usable_route(D,X,Y) :-
@@ -269,7 +273,8 @@ is_omar(D,Z)  :- landscape(D,Z,omar).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Unique current location
-:- current(D1,Z1), current(D2,Z2), (D1,Z1) != (D2,Z2).
+:- current(D1,Z1), current(D2,Z2), D1 != D2.
+:- current(D,Z1), current(D,Z2), Z1 != Z2.
 
 % Current and destination cannot be the same
 :- current(D,Z), destination(D,Z).
@@ -294,6 +299,9 @@ is_omar(D,Z)  :- landscape(D,Z,omar).
 
 #show near_route/3.
 #show far_route/3.
+
+#show drought_reserve/2.
+#show reserve_open/2.
 
 #show has_water/2.
 #show good_forage/2.
