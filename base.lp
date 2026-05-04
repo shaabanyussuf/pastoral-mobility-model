@@ -210,53 +210,66 @@ usable_route(D,X,Y) :-
     not blocked_route(D,X,Y).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% 11. PATH / REACHABILITY
+%% 11. MINIMUM ROUTE-STEP DISTANCE FROM CURRENT LOCATION
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-path(D,X,Y) :-
-    usable_route(D,X,Y).
+% Distance 0 at the current location
+dist(D,Z,0) :-
+    current(D,Z).
 
-path(D,X,Z) :-
-    path(D,X,Y),
-    usable_route(D,Y,Z),
-    X != Z.
+% Propagate outward through usable routes
+dist(D,Z2,N+1) :-
+    dist(D,Z1,N),
+    usable_route(D,Z1,Z2),
+    N < 8.
+
+% There exists a smaller distance
+smaller_dist(D,Z,N) :-
+    dist(D,Z,N),
+    dist(D,Z,M),
+    M < N.
+
+% Minimum usable route-step distance
+min_dist(D,Z,N) :-
+    dist(D,Z,N),
+    not smaller_dist(D,Z,N).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% 12. QUALITATIVE ROUTE-STEP DISTANCE
+%% 12. QUALITATIVE ROUTE DISTANCE
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-step_distance(D,X,Y,1) :-
-    usable_route(D,X,Y).
+near_route(D,Zc,Zd) :-
+    current(D,Zc),
+    destination(D,Zd),
+    min_dist(D,Zd,1).
 
-step_distance(D,X,Z,N+1) :-
-    step_distance(D,X,Y,N),
-    usable_route(D,Y,Z),
-    X != Z,
-    N < 10.
+near_route(D,Zc,Zd) :-
+    current(D,Zc),
+    destination(D,Zd),
+    min_dist(D,Zd,2).
 
-near_route(D,X,Y) :-
-    step_distance(D,X,Y,1).
-
-near_route(D,X,Y) :-
-    step_distance(D,X,Y,2).
-
-far_route(D,X,Y) :-
-    path(D,X,Y),
-    not near_route(D,X,Y).
+far_route(D,Zc,Zd) :-
+    current(D,Zc),
+    destination(D,Zd),
+    min_dist(D,Zd,N),
+    N >= 3,
+    N <= 4.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% 13. PHYSICAL REACHABILITY STATUS
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 physically_reachable(D,Zd) :-
-    current(D,Zc),
     destination(D,Zd),
-    path(D,Zc,Zd).
+    min_dist(D,Zd,N),
+    N >= 1,
+    N <= 4.
 
 unreachable(D,Zd) :-
-    current(D,Zc),
     destination(D,Zd),
-    not path(D,Zc,Zd).
+    not physically_reachable(D,Zd).
+
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% 14. OPTIONAL LANDSCAPE VIEWS
@@ -283,33 +296,7 @@ is_omar(D,Z)  :- landscape(D,Z,omar).
 %% 16. OUTPUT CONTROL
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-#show current/2.
-#show destination/2.
-
-#show landscape/3.
-#show seasonally_suitable/2.
-
-#show route/3.
-#show blocked_route/3.
-#show usable_route/3.
-#show path/3.
-
-#show physically_reachable/2.
-#show unreachable/2.
-
 #show near_route/3.
 #show far_route/3.
-
-#show drought_reserve/2.
-#show reserve_open/2.
-
-#show has_water/2.
-#show good_forage/2.
-#show moderate_forage/2.
-#show poor_forage/2.
-#show supports_finna/2.
-#show poor_finna/2.
-#show unsafe_zone/2.
-#show restricted_zone/2.
-#show institutionally_open/2.
-#show effective_rain/2.
+#show current/2.
+#show destination/2.
