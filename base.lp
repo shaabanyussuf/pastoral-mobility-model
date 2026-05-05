@@ -1,5 +1,5 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% BASE ENCODING: DEDHA-SPECIFIC GROUNDED LANDSCAPE
+%% BASE ENCODING: DEDHA-SPECIFIC HIERARCHICAL LANDSCAPE
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -39,18 +39,35 @@ distance_value(near;far).
 season_value(wet;dry;drought).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% 3. LANDSCAPE ASSIGNMENT
+%% 3. HIERARCHICAL TERRITORIAL STRUCTURE
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Dedha 1
-landscape(d1,a,baada). landscape(d1,b,baada). landscape(d1,c,baada).
-landscape(d1,d,malbe). landscape(d1,e,malbe). landscape(d1,f,malbe).
-landscape(d1,g,wayam). landscape(d1,h,wayam). landscape(d1,i,wayam).
+% Zones within each Dedha
+zone(d1,zb1;zm1;zw1).
+zone(d2,zc2;zm2;zo2).
 
-% Dedha 2
-landscape(d2,a,caafa). landscape(d2,b,caafa). landscape(d2,c,caafa).
-landscape(d2,d,malbe). landscape(d2,e,malbe). landscape(d2,f,malbe).
-landscape(d2,g,omar).  landscape(d2,h,omar).  landscape(d2,i,omar).
+% Zone-to-landscape assignment
+zone_landscape(d1,zb1,baada).
+zone_landscape(d1,zm1,malbe).
+zone_landscape(d1,zw1,wayam).
+
+zone_landscape(d2,zc2,caafa).
+zone_landscape(d2,zm2,malbe).
+zone_landscape(d2,zo2,omar).
+
+% Grazing areas contained in zones
+in_zone(d1,a,zb1). in_zone(d1,b,zb1). in_zone(d1,c,zb1).
+in_zone(d1,d,zm1). in_zone(d1,e,zm1). in_zone(d1,f,zm1).
+in_zone(d1,g,zw1). in_zone(d1,h,zw1). in_zone(d1,i,zw1).
+
+in_zone(d2,a,zc2). in_zone(d2,b,zc2). in_zone(d2,c,zc2).
+in_zone(d2,d,zm2). in_zone(d2,e,zm2). in_zone(d2,f,zm2).
+in_zone(d2,g,zo2). in_zone(d2,h,zo2). in_zone(d2,i,zo2).
+
+% Derive landscape of grazing area from zone membership
+landscape(D,Z,L) :-
+    in_zone(D,Z,Zone),
+    zone_landscape(D,Zone,L).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% 4. LANDSCAPE SEASONAL SUITABILITY
@@ -88,6 +105,14 @@ wet_landscape(D,Z) :-
 :- current(D,Z), not area(D,Z).
 :- destination(D,Z), not area(D,Z).
 
+:- zone(D,Zone), not dedha(D).
+
+:- zone_landscape(D,Zone,L), not zone(D,Zone).
+:- zone_landscape(D,Zone,L), not landscape_type(L).
+
+:- in_zone(D,Z,Zone), not area(D,Z).
+:- in_zone(D,Z,Zone), not zone(D,Zone).
+
 :- landscape(D,Z,L), not area(D,Z).
 :- landscape(D,Z,L), not landscape_type(L).
 
@@ -122,6 +147,9 @@ wet_landscape(D,Z) :-
 %% 6. FUNCTIONAL UNIQUENESS
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+:- in_zone(D,Z,Zone1), in_zone(D,Z,Zone2), Zone1 != Zone2.
+:- zone_landscape(D,Zone,L1), zone_landscape(D,Zone,L2), L1 != L2.
+
 :- forage(D,Z,F1), forage(D,Z,F2), F1 != F2.
 :- water(D,Z,W1), water(D,Z,W2), W1 != W2.
 :- finna(D,Z,V1), finna(D,Z,V2), V1 != V2.
@@ -135,30 +163,30 @@ wet_landscape(D,Z) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Water
-has_water(D,Z) :- water(D,Z, available).
-scarce_water(D,Z) :- water(D,Z, scarce).
-no_water(D,Z) :- water(D,Z, none).
+has_water(D,Z) :- water(D,Z,available).
+scarce_water(D,Z) :- water(D,Z,scarce).
+no_water(D,Z) :- water(D,Z,none).
 
 % Forage
-good_forage(D,Z) :- forage(D,Z, good).
-moderate_forage(D,Z) :- forage(D,Z, moderate).
-poor_forage(D,Z) :- forage(D,Z, poor).
+good_forage(D,Z) :- forage(D,Z,good).
+moderate_forage(D,Z) :- forage(D,Z,moderate).
+poor_forage(D,Z) :- forage(D,Z,poor).
 
 % Finna
-supports_finna(D,Z) :- finna(D,Z, good).
-poor_finna(D,Z) :- finna(D,Z, poor).
+supports_finna(D,Z) :- finna(D,Z,good).
+poor_finna(D,Z) :- finna(D,Z,poor).
 
 % Safety
-safe_zone(D,Z) :- safety(D,Z, safe).
-unsafe_zone(D,Z) :- safety(D,Z, unsafe).
+safe_zone(D,Z) :- safety(D,Z,safe).
+unsafe_zone(D,Z) :- safety(D,Z,unsafe).
 
 % Access
-institutionally_open(D,Z) :- access(D,Z, open).
-restricted_zone(D,Z) :- access(D,Z, restricted).
+institutionally_open(D,Z) :- access(D,Z,open).
+restricted_zone(D,Z) :- access(D,Z,restricted).
 
 % Distance to water
-near_water(D,Z) :- distance_to_water(D,Z, near).
-far_water(D,Z) :- distance_to_water(D,Z, far).
+near_water(D,Z) :- distance_to_water(D,Z,near).
+far_water(D,Z) :- distance_to_water(D,Z,far).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% 8. CONTEXT LAYER
@@ -269,8 +297,6 @@ unreachable(D,Zd) :-
     destination(D,Zd),
     not physically_reachable(D,Zd).
 
-
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% 14. OPTIONAL LANDSCAPE VIEWS
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -282,7 +308,28 @@ is_wayam(D,Z) :- landscape(D,Z,wayam).
 is_omar(D,Z)  :- landscape(D,Z,omar).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% 15. SANITY CONSTRAINTS
+%% 15. OPTIONAL ZONE-LEVEL VIEWS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+zone_seasonally_suitable(D,Zone) :-
+    zone_landscape(D,Zone,L),
+    season(S),
+    suitable_in_season(L,S).
+
+zone_drought_landscape(D,Zone) :-
+    zone_landscape(D,Zone,L),
+    suitable_in_season(L,drought).
+
+zone_dry_landscape(D,Zone) :-
+    zone_landscape(D,Zone,L),
+    suitable_in_season(L,dry).
+
+zone_wet_landscape(D,Zone) :-
+    zone_landscape(D,Zone,L),
+    suitable_in_season(L,wet).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% 16. SANITY CONSTRAINTS
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Unique current location
@@ -293,10 +340,6 @@ is_omar(D,Z)  :- landscape(D,Z,omar).
 :- current(D,Z), destination(D,Z).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% 16. OUTPUT CONTROL
+%% 17. OUTPUT CONTROL
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-#show near_route/3.
-#show far_route/3.
-#show current/2.
-#show destination/2.
