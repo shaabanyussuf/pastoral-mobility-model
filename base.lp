@@ -35,6 +35,10 @@ finna_value(good;poor).
 safety_value(safe;unsafe).
 access_value(open;restricted).
 distance_value(near;far).
+watering_strategy_value(none;dabsu;limalim).
+chisa_value(suitable;unsuitable).
+herd_type(warra;fora).
+report_status_value(clear;conflicting).
 
 season_value(wet;dry;drought).
 
@@ -43,8 +47,13 @@ season_value(wet;dry;drought).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Zones within each Dedha
-zone(d1,zb1;zm1;zw1).
-zone(d2,zc2;zm2;zo2).
+zone(d1,zb1).
+zone(d1,zm1).
+zone(d1,zw1).
+
+zone(d2,zc2).
+zone(d2,zm2).
+zone(d2,zo2).
 
 % Zone-to-landscape assignment
 zone_landscape(d1,zb1,baada).
@@ -105,6 +114,17 @@ wet_landscape(D,Z) :-
 :- current(D,Z), not area(D,Z).
 :- destination(D,Z), not area(D,Z).
 
+:- watering_strategy(D,Z,S), not area(D,Z).
+:- watering_strategy(D,Z,S), not watering_strategy_value(S).
+
+:- chisa(D,Z,C), not area(D,Z).
+:- chisa(D,Z,C), not chisa_value(C).
+
+:- herd(H), not herd_type(H).
+
+:- report_status(D,Z,R), not area(D,Z).
+:- report_status(D,Z,R), not report_status_value(R).
+
 :- zone(D,Zone), not dedha(D).
 
 :- zone_landscape(D,Zone,L), not zone(D,Zone).
@@ -136,7 +156,7 @@ wet_landscape(D,Z) :-
 
 :- drought_reserve(D,Z), not area(D,Z).
 :- reserve_open(D,Z), not area(D,Z).
-:- protected(D,Z), not area(D,Z).
+
 
 :- recent_rain(D,Z), not area(D,Z).
 :- heavy_rain(D,Z), not area(D,Z).
@@ -157,6 +177,10 @@ wet_landscape(D,Z) :-
 :- access(D,Z,A1), access(D,Z,A2), A1 != A2.
 :- distance_to_water(D,Z,D1), distance_to_water(D,Z,D2), D1 != D2.
 :- landscape(D,Z,L1), landscape(D,Z,L2), L1 != L2.
+:- watering_strategy(D,Z,S1), watering_strategy(D,Z,S2), S1 != S2.
+:- chisa(D,Z,C1), chisa(D,Z,C2), C1 != C2.
+:- herd(H1), herd(H2), H1 != H2.
+:- report_status(D,Z,R1), report_status(D,Z,R2), R1 != R2.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% 7. DERIVED BOOLEAN VIEWS
@@ -166,6 +190,11 @@ wet_landscape(D,Z) :-
 has_water(D,Z) :- water(D,Z,available).
 scarce_water(D,Z) :- water(D,Z,scarce).
 no_water(D,Z) :- water(D,Z,none).
+
+% Watering strategy
+has_dabsu(D,Z) :- watering_strategy(D,Z,dabsu).
+has_limalim(D,Z) :- watering_strategy(D,Z,limalim).
+no_watering_strategy(D,Z) :- watering_strategy(D,Z,none).
 
 % Forage
 good_forage(D,Z) :- forage(D,Z,good).
@@ -188,6 +217,12 @@ restricted_zone(D,Z) :- access(D,Z,restricted).
 near_water(D,Z) :- distance_to_water(D,Z,near).
 far_water(D,Z) :- distance_to_water(D,Z,far).
 
+has_chisa(D,Z) :- chisa(D,Z,suitable).
+no_chisa(D,Z) :- chisa(D,Z,unsuitable).
+
+clear_report(D,Z) :- report_status(D,Z,clear).
+conflicting_report(D,Z) :- report_status(D,Z,conflicting).
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% 8. CONTEXT LAYER
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -201,6 +236,17 @@ effective_rain(D,Z) :-
 effective_rain(D,Z) :-
     season(dry),
     heavy_rain(D,Z).
+
+% Default watering strategy
+has_nondefault_watering_strategy(D,Z) :-
+    watering_strategy(D,Z,dabsu).
+
+has_nondefault_watering_strategy(D,Z) :-
+    watering_strategy(D,Z,limalim).
+
+watering_strategy(D,Z,none) :-
+    destination(D,Z),
+    not has_nondefault_watering_strategy(D,Z).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% 9. ROUTE NETWORK WITHIN EACH DEDHA
@@ -279,9 +325,12 @@ near_route(D,Zc,Zd) :-
 far_route(D,Zc,Zd) :-
     current(D,Zc),
     destination(D,Zd),
+    min_dist(D,Zd,3).
+
+too_far(D,Zd) :-
+    destination(D,Zd),
     min_dist(D,Zd,N),
-    N >= 3,
-    N <= 4.
+    N >= 4.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% 13. PHYSICAL REACHABILITY STATUS
@@ -291,7 +340,7 @@ physically_reachable(D,Zd) :-
     destination(D,Zd),
     min_dist(D,Zd,N),
     N >= 1,
-    N <= 4.
+    
 
 unreachable(D,Zd) :-
     destination(D,Zd),
@@ -343,3 +392,7 @@ zone_wet_landscape(D,Zone) :-
 %% 17. OUTPUT CONTROL
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+#show current/2.
+#show destination/2.
+#show unreachable/2.
+#show min_dist/3.
