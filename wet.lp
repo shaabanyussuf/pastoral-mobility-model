@@ -1,17 +1,14 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% INSTANCE TEST 1
-%% Wet season, seasonally suitable destination with water
+%% TEST: Wet season LOGIC
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 season(wet).
+herd(fora).
 
-% Current location
 current(d1,a).
+destination(d1,h).
+destination(d1,i).
 
-% Destination under consideration
-destination(d1,g).
-
-% Current area conditions (optional unless you use them later)
 forage(d1,a,moderate).
 water(d1,a,available).
 finna(d1,a,good).
@@ -19,10 +16,21 @@ safety(d1,a,safe).
 access(d1,a,open).
 distance_to_water(d1,a,near).
 
-% Destination conditions
-forage(d1,g,good).
-water(d1,g,available).
-finna(d1,g,good).
-safety(d1,g,safe).
-access(d1,g,open).
-distance_to_water(d1,g,near).
+forage(d1,h,good).
+water(d1,h,available).
+finna(d1,h,good).
+chisa(d1,h,suitable).
+safety(d1,h,safe).
+access(d1,h,open).
+distance_to_water(d1,h,near).
+
+forage(d1,i,good).
+water(d1,i,available).
+finna(d1,i,good).
+chisa(d1,i,suitable).
+safety(d1,i,safe).
+access(d1,i,open).
+distance_to_water(d1,i,near).
+
+report_status(d1,h,clear).
+report_status(d1,i,clear).
