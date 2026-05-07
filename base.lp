@@ -339,7 +339,7 @@ too_far(D,Zd) :-
 physically_reachable(D,Zd) :-
     destination(D,Zd),
     min_dist(D,Zd,N),
-    N >= 1,
+    N >= 1.
     
 
 unreachable(D,Zd) :-
