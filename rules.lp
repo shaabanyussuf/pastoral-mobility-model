@@ -7,7 +7,6 @@
 %% 1. MOVEMENT ABSTRACTION
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Actions are primary; decision/4 is a unified view.
 decision(D,Zc,Zd,move) :-
     move(D,Zc,Zd).
 
@@ -24,10 +23,46 @@ decision(D,Zc,Zd,negotiate) :-
 %% 2. SUITABILITY RULES
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Water is non-negotiable.
-water_ok(D,Zd) :-
+% Water adequacy
+water_sufficient(D,Zd) :-
     destination(D,Zd),
     has_water(D,Zd).
+
+water_insufficient(D,Zd) :-
+    destination(D,Zd),
+    no_water(D,Zd).
+
+water_insufficient(D,Zd) :-
+    destination(D,Zd),
+    scarce_water(D,Zd),
+    not drought_ctx.
+
+% Distance-to-water manageability
+distance_manageable(D,Zd) :-
+    destination(D,Zd),
+    near_water(D,Zd).
+
+distance_manageable(D,Zd) :-
+    destination(D,Zd),
+    far_water(D,Zd),
+    has_dabsu(D,Zd).
+
+distance_manageable(D,Zd) :-
+    destination(D,Zd),
+    far_water(D,Zd),
+    has_limalim(D,Zd).
+
+% Final water condition
+water_ok(D,Zd) :-
+    destination(D,Zd),
+    water_sufficient(D,Zd),
+    distance_manageable(D,Zd).
+
+ 
+
+needs_rescout(D,Zd) :-
+    destination(D,Zd),
+    conflicting_report(D,Zd).    
 
 % Normal suitability
 suitable_normal(D,Zd) :-
@@ -54,6 +89,7 @@ suitable_normal(D,Zd) :-
 suitable_drought(D,Zd) :-
     destination(D,Zd),
     drought_ctx,
+    seasonally_suitable(D,Zd),
     water_ok(D,Zd),
     poor_forage(D,Zd),
     supports_finna(D,Zd),
@@ -62,6 +98,7 @@ suitable_drought(D,Zd) :-
 suitable_drought(D,Zd) :-
     destination(D,Zd),
     drought_ctx,
+    seasonally_suitable(D,Zd),
     water_ok(D,Zd),
     moderate_forage(D,Zd),
     supports_finna(D,Zd),
@@ -83,25 +120,20 @@ route_ok(D,Zc,Zd) :-
 %% 4. BLOCKING CONDITIONS
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Safety block
 blocked_by_safety(D,Zd) :-
     destination(D,Zd),
     unsafe_zone(D,Zd),
     not drought_ctx.
 
-% Institutional access block
 blocked_by_access(D,Zd) :-
     destination(D,Zd),
     restricted_zone(D,Zd),
     not drought_ctx.
 
-% Route block: destination is unreachable from current area
 blocked_by_route(D,Zd) :-
     destination(D,Zd),
     unreachable(D,Zd).
 
-% Drought reserve block:
-% drought reserves are not used in normal times unless opened
 blocked_by_reserve(D,Zd) :-
     destination(D,Zd),
     drought_reserve(D,Zd),
@@ -112,14 +144,11 @@ blocked_by_reserve(D,Zd) :-
 %% 5. NEGOTIATION RULES
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Negotiation when access is restricted but area is otherwise usable
 negotiate(D,Zc,Zd) :-
     current(D,Zc),
     destination(D,Zd),
     restricted_zone(D,Zd),
-    water_ok(D,Zd),
-    supports_finna(D,Zd),
-    physically_reachable(D,Zd),
+    candidate_for_movement(D,Zd),
     route_ok(D,Zc,Zd),
     not blocked_by_safety(D,Zd),
     not blocked_by_route(D,Zd),
@@ -129,7 +158,6 @@ negotiate(D,Zc,Zd) :-
 %% 6. MOVE / WAIT / DO NOT MOVE
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% MOVE: suitable + reachable + not blocked
 % Eligible movement options
 movable_option(D,Zc,Zd) :-
     current(D,Zc),
@@ -140,6 +168,7 @@ movable_option(D,Zc,Zd) :-
     not blocked_by_access(D,Zd),
     not blocked_by_route(D,Zd),
     not blocked_by_reserve(D,Zd),
+        not needs_rescout(D,Zd),
     not do_not_move(D,Zc,Zd).
 
 % Select exactly one move if at least one movable option exists
@@ -147,7 +176,6 @@ movable_option(D,Zc,Zd) :-
     current(D,Zc),
     1 { movable_option(D,Zc,Zd) : destination(D,Zd) }.
 
-% Final move action
 move(D,Zc,Zd) :-
     selected_move(D,Zc,Zd).
 
@@ -159,13 +187,41 @@ wait(D,Zc,Zd) :-
     poor_forage(D,Zd),
     effective_rain(D,Zd),
     not do_not_move(D,Zc,Zd),
-    not negotiate(D,Zc,Zd).
+    not negotiate(D,Zc,Zd),
+    not move(D,Zc,Zd).
+
+    wait(D,Zc,Zd) :-
+    current(D,Zc),
+    destination(D,Zd),
+    needs_rescout(D,Zd),
+    not do_not_move(D,Zc,Zd),
+    not negotiate(D,Zc,Zd),
+    not move(D,Zc,Zd).
 
 % DO NOT MOVE conditions
 do_not_move(D,Zc,Zd) :-
     current(D,Zc),
     destination(D,Zd),
-    no_water(D,Zd).
+    water_insufficient(D,Zd).
+
+do_not_move(D,Zc,Zd) :-
+    current(D,Zc),
+    destination(D,Zd),
+    far_water(D,Zd),
+    not distance_manageable(D,Zd).
+
+ do_not_move(D,Zc,Zd) :-
+    current(D,Zc),
+    destination(D,Zd),
+    not seasonally_suitable(D,Zd),
+    not drought_ctx.   
+
+do_not_move(D,Zc,Zd) :-
+    current(D,Zc),
+    destination(D,Zd),
+    herd(warra),
+    far_route(D,Zc,Zd),
+    not drought_ctx.    
 
 do_not_move(D,Zc,Zd) :-
     current(D,Zc),
@@ -183,6 +239,12 @@ do_not_move(D,Zc,Zd) :-
     destination(D,Zd),
     blocked_by_route(D,Zd).
 
+do_not_move(D,Zc,Zd) :-
+    current(D,Zc),
+    destination(D,Zd),
+    too_far(D,Zd),
+    not drought_ctx.
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% 7. DECISION CONSISTENCY
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -194,22 +256,17 @@ do_not_move(D,Zc,Zd) :-
 :- wait(D,Zc,Zd), negotiate(D,Zc,Zd).
 :- do_not_move(D,Zc,Zd), negotiate(D,Zc,Zd).
 
-
-
-% Extra safety at decision-view level
 :- decision(D,Zc,Zd,A1), decision(D,Zc,Zd,A2), A1 != A2.
 
-
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% 9. OPTIMISATION
+%% 8. OPTIMISATION
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Prefer good forage over moderate forage
 :~ move(D,Zc,Zd), moderate_forage(D,Zd). [1@2,D,Zc,Zd]
 :~ move(D,Zc,Zd), good_forage(D,Zd).     [0@2,D,Zc,Zd]
 
-% Prefer near destinations over far destinations (route-step distance)
+% Prefer near over far
 :~ move(D,Zc,Zd), far_route(D,Zc,Zd).  [1@1,D,Zc,Zd]
 :~ move(D,Zc,Zd), near_route(D,Zc,Zd). [0@1,D,Zc,Zd]
 
@@ -223,9 +280,14 @@ do_not_move(D,Zc,Zd) :-
 % In drought, still prefer safe destinations when possible
 :~ move(D,Zc,Zd), drought_ctx, unsafe_zone(D,Zd). [1@2,D,Zc,Zd]
 
+% Prefer destinations with suitable camp conditions
+:~ move(D,Zc,Zd), no_chisa(D,Zd).  [1@1,D,Zc,Zd]
+:~ move(D,Zc,Zd), has_chisa(D,Zd). [0@1,D,Zc,Zd]
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% 10. OUTPUT
+%% 9. OUTPUT
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 #show movable_option/3.
 #show move/3.
 #show wait/3.
@@ -237,3 +299,7 @@ do_not_move(D,Zc,Zd) :-
 #show blocked_by_access/2.
 #show blocked_by_safety/2.
 #show blocked_by_reserve/2.
+#show water_ok/2.
+#show suitable_normal/2.
+#show suitable_drought/2.
+#show route_ok/3.
