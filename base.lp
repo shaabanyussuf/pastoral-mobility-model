@@ -6,13 +6,19 @@
 %% 1. CORE ENTITIES
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-dedha(d1;d2).
-grazing_area(a;b;c;d;e;f;g;h;i).
+% dedha(d1;d2).
+dedha(d1).
+dedha(d2).
+
+grazing_area(a;b;c;d;e;f;g;h;i;j;k;l;m;n;o;p;q;r;s).
+
+area(d1, a;b;c;d;e;f;g;h;i).
+area(d2, j;k;l;m;n;o;p;q;r;s).
 
 % Area membership
-area(D,Z) :-
-    dedha(D),
-    grazing_area(Z).
+% area(D,Z) :-
+%     dedha(D),
+%     grazing_area(Z).
 
 % To be given in scenario files:
 % current(D,Z).
@@ -252,6 +258,8 @@ watering_strategy(D,Z,none) :-
 %% 9. ROUTE NETWORK WITHIN EACH DEDHA
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+% route(r1, a, b).
+
 route(D,a,b) :- dedha(D).
 route(D,b,c) :- dedha(D).
 
@@ -282,6 +290,8 @@ route(D,Y,X) :- route(D,X,Y).
 usable_route(D,X,Y) :-
     route(D,X,Y),
     not blocked_route(D,X,Y).
+
+:- blocked_route(D, X,Y), usable_route(D,X,Y).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% 11. MINIMUM ROUTE-STEP DISTANCE FROM CURRENT LOCATION
